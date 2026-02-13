@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asistente de Productos</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --surface:   #1a1a1a;
+      --border:    #2a2a2a;
+      --accent:    #e8c97e;
+      --accent2:   #c4a45a;
+      --text:      #f0ede8;
+      --muted:     #7a7672;
+      --user-bg:   #1f1e1b;
+      --bot-bg:    #161614;
+      --radius:    14px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── HEADER ── */
+    header {
+      width: 100%;
+      max-width: 720px;
+      padding: 32px 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .brand {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(22px, 4vw, 28px);
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+    .brand span { font-style: italic; color: var(--text); }
+    .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 300;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── CHAT CONTAINER ── */
+    #chat-container {
+      width: 100%;
+      max-width: 720px;
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    /* ── MESSAGES ── */
+    .message {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      animation: fadeUp 0.3s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .avatar.bot {
+      background: linear-gradient(135deg, var(--accent2), #8a6f3a);
+      color: #0f0f0f;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .avatar.user {
+      background: var(--border);
+      color: var(--muted);
+    }
+
+    .bubble {
+      max-width: 78%;
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      line-height: 1.65;
+      position: relative;
+    }
+    .message.bot .bubble {
+      background: var(--bot-bg);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+      color: var(--text);
+    }
+    .message.user .bubble {
+      background: var(--user-bg);
+      border: 1px solid #2e2c28;
+      border-top-right-radius: 4px;
+      color: #d4d0c8;
+    }
+
+    /* ── PRODUCT CARD ── */
+    .product-card {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .product-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      background: var(--border);
+    }
+    .product-img-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #1e1c19, #2a2720);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .product-info {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .product-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 16px;
+      color: var(--accent);
+    }
+    .product-price {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--border);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── TYPING INDICATOR ── */
+    .typing .bubble {
+      padding: 14px 18px;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: blink 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+      40%            { opacity: 1;   transform: scale(1); }
+    }
+
+    /* ── INPUT AREA ── */
+    #input-area {
+      width: 100%;
+      max-width: 720px;
+      padding: 0 24px 32px;
+      display: flex;
+      gap: 10px;
+    }
+    #user-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+    }
+    #user-input::placeholder { color: var(--muted); }
+    #user-input:focus { border-color: var(--accent2); }
+
+    #send-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0f0f0f;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    #send-btn:hover:not(:disabled) { opacity: 0.88; }
+    #send-btn:active:not(:disabled) { transform: scale(0.97); }
+    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── WELCOME MSG ── */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 48px 24px;
+      gap: 12px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .welcome-icon {
+      font-size: 36px;
+      margin-bottom: 4px;
+    }
+    .welcome h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--accent);
+    }
+    .welcome p {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 360px;
+      line-height: 1.6;
+    }
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .suggestion-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .suggestion-chip:hover {
+      border-color: var(--accent2);
+      background: #1f1e1b;
+    }
+
+    /* scrollbar */
+    #chat-container::-webkit-scrollbar { width: 4px; }
+    #chat-container::-webkit-scrollbar-track { background: transparent; }
+    #chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Asistente <span>de Productos</span></div>
+  <div class="subtitle">Pregúntame sobre cualquier producto del catálogo</div>
+</header>
+
+<div id="chat-container">
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">🛍️</div>
+    <h2>¿En qué puedo ayudarte?</h2>
+    <p>Pregúntame sobre precios, características o disponibilidad de cualquier producto.</p>
+    <div class="suggestions">
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">¿Qué productos tienen?</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">Busco algo deportivo</div>
+      <div class="suggestion-chip" onclick="sendSuggestion(this)">¿Cuál es el más barato?</div>
+    </div>
+  </div>
+</div>
+
+<div id="input-area">
+  <textarea id="user-input" placeholder="Escribe tu pregunta..." rows="1"></textarea>
+  <button id="send-btn" onclick="sendMessage()">Enviar →</button>
+</div>
+
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const userInput     = document.getElementById('user-input');
+  const sendBtn       = document.getElementById('send-btn');
+
+  // Auto-resize textarea
+  userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+  });
+
+  userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  function sendSuggestion(el) {
+    userInput.value = el.textContent;
+    sendMessage();
+  }
+
+  function removeWelcome() {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+  }
+
+  function appendMessage(role, text, producto = null) {
+    removeWelcome();
+    const msg = document.createElement('div');
+    msg.className = `message ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `avatar ${role}`;
+    avatar.textContent = role === 'bot' ? 'AI' : '✦';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    // Texto con saltos de línea
+    const textNode = document.createElement('p');
+    textNode.style.whiteSpace = 'pre-wrap';
+    textNode.textContent = text;
+    bubble.appendChild(textNode);
+
+    // Tarjeta de producto
+    if (producto) {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+
+      if (producto.imagen) {
+        const img = document.createElement('img');
+        img.className = 'product-img';
+        img.src = producto.imagen;
+        img.alt = producto.nombre;
+        img.onerror = () => {
+          img.replaceWith(placeholder());
+        };
+        card.appendChild(img);
+      } else {
+        card.appendChild(placeholder());
+      }
+
+      const info = document.createElement('div');
+      info.className = 'product-info';
+      info.innerHTML = `
+        <span class="product-name">${producto.nombre}</span>
+        ${producto.precio ? `<span class="product-price">$${producto.precio.toFixed(2)}</span>` : ''}
+      `;
+      card.appendChild(info);
+      bubble.appendChild(card);
+    }
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    chatContainer.appendChild(msg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    return msg;
+  }
+
+  function placeholder() {
+    const div = document.createElement('div');
+    div.className = 'product-img-placeholder';
+    div.textContent = 'Imagen no disponible';
+    return div;
+  }
+
+  function showTyping() {
+    removeWelcome();
+    const msg = document.createElement('div');
+    msg.className = 'message bot typing';
+    msg.id = 'typing';
+    msg.innerHTML = `
+      <div class="avatar bot">AI</div>
+      <div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    `;
+    chatContainer.appendChild(msg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    sendBtn.disabled = true;
+    showTyping();
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: text })
+      });
+      const data = await res.json();
+      removeTyping();
+      appendMessage('bot', data.respuesta, data.producto);
+    } catch (err) {
+      removeTyping();
+      appendMessage('bot', 'Ocurrió un error. Por favor intenta de nuevo.');
+    } finally {
+      sendBtn.disabled = false;
+      userInput.focus();
+    }
+  }
+</script>
+</body>
+</html>
