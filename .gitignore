@@ -1,0 +1,17 @@
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Dependencias (opcional, para no subir librerías)
+venv/
+node_modules/
