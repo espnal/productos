@@ -15,6 +15,9 @@ app = FastAPI()
 with open("productos.json", "r", encoding="utf-8") as f:
     productos = json.load(f)
 
+# Cargar conocimiento del proyecto
+with open("conocimiento.txt", "r", encoding="utf-8") as f:
+    conocimiento = f.read()
 # Cliente Anthropic
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -25,19 +28,15 @@ class Pregunta(BaseModel):
 async def chat(pregunta: Pregunta):
     catalogo_texto = json.dumps(productos, ensure_ascii=False, indent=2)
 
-    system_prompt = f"""Eres un asistente de ventas amable y experto en nuestros productos.
-Cuando el usuario pregunte por un producto, responde con información clara y útil.
-
-IMPORTANTE: Si mencionas un producto específico en tu respuesta, SIEMPRE termina con esta línea exacta:
-PRODUCTO_ID: el-id-del-producto
-
-Si mencionas varios productos, incluye el más relevante:
-PRODUCTO_ID: el-id-del-producto
-
-Si no se trata de ningún producto específico, NO incluyas la línea PRODUCTO_ID.
+    system_prompt = f"""
+{conocimiento}
 
 Catálogo de productos disponible:
-{catalogo_texto}"""
+{catalogo_texto}
+
+IMPORTANTE: Cuando menciones un producto específico termina con:
+PRODUCTO_ID: el-id-del-producto
+"""
 
     response = client.messages.create(
         model="claude-sonnet-4-5-20250929",
